@@ -1,0 +1,100 @@
+# MarketNerve Build — Walkthrough
+
+## What Was Built
+
+A complete production-quality iteration of the MarketNerve platform — autonomous Indian market intelligence. All changes are backward-compatible with the existing project structure.
+
+---
+
+## Backend (FastAPI)
+
+### Services Upgraded
+
+| Service | Key Improvements |
+|---|---|
+| **Signal Scout** ([signals.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py)) | Z-score & anomaly score derivation, reward-risk ratio, signal tagging (high-confidence, fresh, portfolio-relevant, high-anomaly), [signal_type](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_signal_service.py#71-76) filter, offset pagination, [count_signals()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#140-151), [get_high_confidence_signals()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#153-156), [get_signals_by_sector()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#169-171) |
+| **Pattern Mind** ([patterns.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/patterns.py)) | 10-ticker sector/cap map, expands to seed [risk_flags](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/portfolio.py#183-194), [get_pattern_by_id()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/patterns.py#112-117), [list_patterns_by_confidence()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/patterns.py#119-121), reward-risk in live events |
+| **Portfolio Lens** ([portfolio.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/portfolio.py)) | ETF weight in analysis, 7 Q&A routing branches (overlap, Reliance, HDFC Bank, RBI rates, concentration, XIRR, health score), dynamic risk flags with percentages, smart recommended actions |
+| **Story Engine** ([story.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/story.py)) | Sentiment score mapping per arc, [list_all_arcs()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/story.py#87-89), 6-step script outline, per-arc `what_to_watch_next` |
+| **IPO Intelligence** ([ipo.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/ipo.py)) | [get_ipo_by_name()](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/ipo.py#46-52), surfaces [cutoff_price](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#205-210) + [listing_date](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#211-215), 4-tier demand label |
+| **Health** ([health.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/health.py)) | 6 pipeline entries, surfaces total signals processed + uptime |
+
+### New API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/signals` | Paginated signals (limit, offset, sector, signal_type, min_confidence, since) |
+| `GET` | `/api/signals/latest` | High-confidence signal feed |
+| `GET` | `/api/signals/sector/{sector}` | Sector-filtered signals |
+| `GET` | `/api/signals/audit/{id}` | Full audit trail with z_score, tags, confidence metadata |
+| `GET` | `/api/patterns/high-conviction` | Patterns above confidence threshold |
+| `GET` | `/api/patterns/id/{id}` | Pattern by ID |
+| `GET` | `/api/story/arcs` | All 5 story arcs |
+| `GET` | `/api/ipo/active` | Active IPOs with pagination metadata |
+| `GET` | `/api/ipo/{name}` | Single IPO detail |
+
+### Schemas Updated ([schemas.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py))
+
+- [EnrichedSignal](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#45-65): added [z_score](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#63-69), [anomaly_score](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#55-61), [tags](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/services/signals.py#35-46)
+- [BacktestStats](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#13-22): added [reward_risk_ratio](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#75-80)
+- [PortfolioAnalysisResponse](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#169-189): added `etf_weight`
+- [StoryArc](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#218-226): added [sentiment_score](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#161-165)
+- [IpoInsight](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#228-238): added [cutoff_price](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#205-210), [listing_date](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#211-215)
+- [HealthResponse](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#240-250): added [total_signals_processed](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#254-257), [uptime_minutes](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py#258-261)
+- New: [PaginatedSignalsResponse](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/app/models/schemas.py#272-278)
+
+---
+
+## Test Coverage
+
+**143 tests, all passing in 1.3s**
+
+| File | Tests | Scope |
+|---|---|---|
+| [test_signal_service.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_signal_service.py) | 30+ | Ranking, filtering, pagination, Z-score, tagging, audit trail, subscription, live events |
+| [test_portfolio_service.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_portfolio_service.py) | 35+ | Parse holdings, totals, XIRR, sector/stock exposure, overlap matrix, health score, benchmark, all 7 Q&A branches |
+| [test_pattern_story_health.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_pattern_story_health.py) | 50+ | Pattern filters/backtest/confidence/reward-risk, story arcs (all 5), IPO labels/dates/sorting, health agent/pipeline/channels |
+| [test_api_routes.py](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/backend/tests/test_api_routes.py) | 40+ | HTTP integration via TestClient: all 9 route groups, filter params, 404 handling |
+
+---
+
+## Frontend (Next.js)
+
+### Design System ([globals.css](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/app/globals.css))
+- **Fonts**: Inter + IBM Plex Mono from Google Fonts
+- **Theme**: Deep dark `#09100f` with layered radial gradients
+- **Tokens**: Full CSS custom property system (colors, borders, radius, shadows)
+- **Animation**: `pulse-glow` keyframe for live indicator dot
+- **Glassmorphism**: `backdrop-filter: blur` on panels + sticky header
+- **Interactive states**: hover lift (`translateY(-2px)`) + glow shadow on cards
+
+### Component Library ([marketnerve-shell.jsx](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx))
+- [MarketNerveShell](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#14-39) — sticky topbar with live wordmark pulse dot + pill nav links
+- [MetricCard](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#40-49) — with tone variants (positive/warning/negative)
+- [SignalCard](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#50-118) — confidence score display, Z-score bar, source chips, audit link
+- [PatternCard](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#119-162) — signal strength chip, win-rate progress bar, risk flag chips
+- [StoryArcCard](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#163-197) — sentiment chip, rich timeline, what-to-watch-next list
+- [IpoCard](file:///c:/Users/Hp/OneDrive/Desktop/marketnerve/apps/web/components/marketnerve-shell.jsx#198-250) — GMP badge, subscription progress bar, cutoff price + listing date
+
+### Pages Redesigned
+| Page | Highlights |
+|---|---|
+| `/` (Home) | Hero split: priority signal + market wrap, 4-metric row, dual-column signal + pattern grid |
+| `/signals` | Live indicator, filter form with number input, 2-column SignalCard grid |
+| `/patterns` | Pattern count, filter form, 2-column PatternCard grid |
+| `/story` | Video card with script outline timeline, quick-arc links, sentiment score panel |
+| `/ipo` | Hottest IPO hero highlight, 2-column IpoCard grid |
+| `/audit/[id]` | Hero signal panel, numbered reasoning steps, enrichment + confidence metadata auto-rendered |
+
+---
+
+## Verification Results
+
+```
+python -m pytest tests/ -v          →  143 passed in 1.30s
+npx next build                      →  Exit code 0, all 8 routes compiled
+```
+
+---
+
+> **Running locally**: `python -m uvicorn app.main:app --reload` (backend) · `npm run dev` (frontend)

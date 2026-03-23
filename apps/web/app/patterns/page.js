@@ -10,34 +10,34 @@ export default async function PatternsPage({ searchParams }) {
 
   return (
     <MarketNerveShell
-      eyebrow="Pattern Mind"
-      title="Chart Pattern Hub"
-      subtitle="Back-tested technical patterns with win rates, narratives, and risk flags — across the NSE universe."
+      eyebrow="Pattern Mind — Technical Intelligence"
+      title={`PATTERN <span class="accent2">HUB</span>`}
+      subtitle="Back-tested chart patterns with win rates, R/R ratios, and failure context"
     >
-      <section className="panel" style={{ marginBottom: 20 }}>
-        <form className="filters-grid" action="/patterns" method="get">
-          <label>
-            Pattern Type
+      <article className="panel" style={{ marginBottom: 20 }}>
+        <form className="filters-bar" action="/patterns" method="get">
+          <div className="field-group">
+            <label className="field-label">Pattern Type</label>
             <input name="pattern_type" defaultValue={params?.pattern_type || ""} placeholder="Golden Cross" />
-          </label>
-          <label>
-            Ticker Symbol
+          </div>
+          <div className="field-group">
+            <label className="field-label">Ticker Symbol</label>
             <input name="ticker" defaultValue={params?.ticker || ""} placeholder="HDFCBANK" />
-          </label>
-          <button type="submit">Scan patterns</button>
+          </div>
+          <button type="submit" className="war-btn cyan">Scan →</button>
         </form>
-      </section>
+      </article>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <span className="chip chip-amber">◆</span>
-        <span className="small mono text-faint">{patterns.length} patterns — ranked by confidence</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <span style={{ color: "var(--neon2)" }}>◆</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text3)", letterSpacing: "0.1em" }}>
+          {patterns.length} PATTERNS DETECTED — RANKED BY CONFIDENCE
+        </span>
       </div>
 
-      <section className="grid columns-2">
-        {patterns.map((pattern) => (
-          <PatternCard key={`${pattern.ticker}-${pattern.pattern_type}`} pattern={pattern} />
-        ))}
-      </section>
+      <div className="grid cols-2">
+        {patterns.map((p, i) => <PatternCard key={`${p.ticker}-${p.pattern_type}`} pattern={p} index={i} />)}
+      </div>
     </MarketNerveShell>
   );
 }

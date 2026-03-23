@@ -10,34 +10,34 @@ export default async function SignalsPage({ searchParams }) {
 
   return (
     <MarketNerveShell
-      eyebrow="Signal Scout"
-      title="Live Signal Radar"
-      subtitle="Ranked market signals with source-cited context, Z-score anomaly scoring, and full audit trails."
+      eyebrow="Signal Scout — NSE Filing Intelligence"
+      title={`SIGNAL <span class="accent">RADAR</span>`}
+      subtitle="Source-cited · Z-scored · Back-tested · Audit-trailed"
     >
-      <section className="panel" style={{ marginBottom: 20 }}>
-        <form className="filters-grid" action="/signals" method="get">
-          <label>
-            Sector
+      <article className="panel" style={{ marginBottom: 20 }}>
+        <form className="filters-bar" action="/signals" method="get">
+          <div className="field-group">
+            <label className="field-label">Sector Filter</label>
             <input name="sector" defaultValue={params?.sector || ""} placeholder="Information Technology" />
-          </label>
-          <label>
-            Min Confidence
+          </div>
+          <div className="field-group">
+            <label className="field-label">Min Confidence</label>
             <input name="min_confidence" type="number" step="0.01" min="0" max="1" defaultValue={params?.min_confidence || ""} placeholder="0.75" />
-          </label>
-          <button type="submit">Apply filters</button>
+          </div>
+          <button type="submit" className="war-btn">Apply →</button>
         </form>
-      </section>
+      </article>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <span className="status-dot live" />
-        <span className="small mono text-faint">{signals.length} signals — sorted by impact score</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <span className="live-dot" />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text3)", letterSpacing: "0.1em" }}>
+          {signals.length} SIGNALS ACTIVE — RANKED BY IMPACT SCORE
+        </span>
       </div>
 
-      <section className="grid columns-2">
-        {signals.map((signal) => (
-          <SignalCard key={signal.id} signal={signal} />
-        ))}
-      </section>
+      <div className="grid cols-2">
+        {signals.map((s, i) => <SignalCard key={s.id} signal={s} index={i} />)}
+      </div>
     </MarketNerveShell>
   );
 }
