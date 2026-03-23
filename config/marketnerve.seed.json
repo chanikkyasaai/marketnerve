@@ -1,0 +1,698 @@
+{
+  "generated_at": "2026-03-23T20:30:00+05:30",
+  "signals": [
+    {
+      "id": "sig-persistent-promoter-dips",
+      "ticker": "PERSISTENT",
+      "company": "Persistent Systems",
+      "sector": "Information Technology",
+      "signal_type": "Promoter Accumulation",
+      "headline": "Promoter accumulation during a 7.3% drawdown mirrors four prior recovery setups.",
+      "summary": "Promoter entities added on four of the last five material dips. The current drawdown is the fifth setup and matches a historical recovery pattern with an 80% win rate over 60 trading days.",
+      "confidence": 0.84,
+      "anomaly_score": 3.52,
+      "z_score": 2.8,
+      "historical_win_rate": 1.0,
+      "avg_30d_return": 0.094,
+      "impact_score": 88,
+      "age_minutes": 47,
+      "portfolio_impact_pct": 2.3,
+      "sources": [
+        "NSE bulk deal filings",
+        "SEBI promoter disclosures"
+      ],
+      "reasoning_steps": [
+        "Classified promoter activity from bulk deal records on NSE.",
+        "Compared event intensity against 24-month baseline — anomaly score 3.52σ.",
+        "Matched current drawdown with four prior dip-buy windows since 2022.",
+        "Computed 60-trading-day recovery outcomes: 4 wins, 0 losses.",
+        "Enriched with FII net flow context — neutral, not a headwind."
+      ],
+      "watch_items": [
+        "Follow-up exchange disclosures in next 48h",
+        "Sector-wide IT risk sentiment from FII desks",
+        "Nifty IT index breadth reading"
+      ]
+    },
+    {
+      "id": "sig-hdfclife-fii-outflow",
+      "ticker": "HDFCLIFE",
+      "company": "HDFC Life",
+      "sector": "Financial Services",
+      "signal_type": "Institutional Flow Shift",
+      "headline": "FII selling pressure is rising while domestic support remains selective.",
+      "summary": "FII outflows accelerated for three consecutive sessions while DIIs bought only one of those days, creating a short-term imbalance. Historical data shows this cluster precedes a 3–7% mean-reversion window in 63% of cases.",
+      "confidence": 0.71,
+      "anomaly_score": 2.1,
+      "z_score": 1.9,
+      "historical_win_rate": 0.63,
+      "avg_30d_return": -0.018,
+      "impact_score": 67,
+      "age_minutes": 96,
+      "portfolio_impact_pct": 1.4,
+      "sources": [
+        "NSDL FII/DII flow data",
+        "ET Markets sector flow summary"
+      ],
+      "reasoning_steps": [
+        "Aggregated 3-day institutional flows from NSDL.",
+        "Compared current outflow magnitude with sector baseline — z-score 1.9.",
+        "Checked prior insurer drawdown contexts after similar flow clusters.",
+        "Identified a 63% mean-reversion win rate within 30 sessions."
+      ],
+      "watch_items": [
+        "Nifty Financial Services breadth recovery",
+        "Upcoming HDFC Life earnings guidance",
+        "RBI policy commentary impact on insurance sector"
+      ]
+    },
+    {
+      "id": "sig-zomato-margin-inflection",
+      "ticker": "ZOMATO",
+      "company": "Zomato",
+      "sector": "Consumer Internet",
+      "signal_type": "Results Inflection",
+      "headline": "Contribution-margin expansion and order-growth acceleration are aligning again.",
+      "summary": "Quarterly commentary shows margin improvement alongside order momentum, a combination that historically preceded positive re-rating windows in 75% of prior occurrences.",
+      "confidence": 0.78,
+      "anomaly_score": 2.7,
+      "z_score": 2.2,
+      "historical_win_rate": 0.75,
+      "avg_30d_return": 0.067,
+      "impact_score": 82,
+      "age_minutes": 182,
+      "portfolio_impact_pct": 0.0,
+      "sources": [
+        "Quarterly shareholder letter",
+        "Management commentary transcript"
+      ],
+      "reasoning_steps": [
+        "Parsed margin and order-growth language from the filing.",
+        "Scored commentary shift versus prior quarter — 2.2σ above baseline.",
+        "Back-tested similar inflection quarters since Zomato's listing in 2021.",
+        "75% of prior inflection quarters produced positive 30-day returns."
+      ],
+      "watch_items": [
+        "Quick-commerce margin sustainability",
+        "Competitive discount intensity from Swiggy",
+        "Blinkit order density expansion"
+      ]
+    },
+    {
+      "id": "sig-reliance-bulk-deal",
+      "ticker": "RELIANCE",
+      "company": "Reliance Industries",
+      "sector": "Energy",
+      "signal_type": "Bulk Deal Alert",
+      "headline": "A single block trade of 1.2 million shares crossed the tape at a 2.1% discount — classic institutional accumulation.",
+      "summary": "Large block deals at discounts below 2.5% have historically been followed by consolidation or mild upside rather than selling pressure, based on 14 prior occurrences.",
+      "confidence": 0.73,
+      "anomaly_score": 2.3,
+      "z_score": 2.0,
+      "historical_win_rate": 0.71,
+      "avg_30d_return": 0.053,
+      "impact_score": 74,
+      "age_minutes": 34,
+      "portfolio_impact_pct": 1.8,
+      "sources": [
+        "NSE bulk deal archive",
+        "SEBI block deal disclosure"
+      ],
+      "reasoning_steps": [
+        "Detected bulk deal crossing 0.5% of market cap in single session.",
+        "Discount to market was 2.1% — within the institutional accumulation band.",
+        "Cross-referenced against 14 prior Reliance block deals since 2020.",
+        "71% resolved positively within 30 trading days."
+      ],
+      "watch_items": [
+        "Counter-party identity disclosure if filed",
+        "Jio subscriber additions in next quarter",
+        "Retail segment inventory build"
+      ]
+    },
+    {
+      "id": "sig-itc-agm-commentary",
+      "ticker": "ITC",
+      "company": "ITC Ltd",
+      "sector": "Consumer Goods",
+      "signal_type": "AGM / Management Commentary",
+      "headline": "AGM commentary signals cigarette volume growth revival and FMCG segment profitability improving faster than consensus expected.",
+      "summary": "Management language around FMCG profitability shifted materially positive at the AGM. Cross-referencing with four prior instances where similar language appeared before earnings, ITC beat consensus estimates 3 out of 4 times.",
+      "confidence": 0.76,
+      "anomaly_score": 2.5,
+      "z_score": 2.1,
+      "historical_win_rate": 0.75,
+      "avg_30d_return": 0.058,
+      "impact_score": 78,
+      "age_minutes": 265,
+      "portfolio_impact_pct": 0.0,
+      "sources": [
+        "NSE AGM transcript",
+        "Company investor relations filing"
+      ],
+      "reasoning_steps": [
+        "Extracted FMCG segment commentary from AGM transcript.",
+        "Scored sentiment shift versus prior two AGMs — 2.1σ above baseline.",
+        "Back-tested three prior instances of similar language shift.",
+        "ITC beat earnings estimates in 3 of 4 following quarters."
+      ],
+      "watch_items": [
+        "Quarterly cigarette excise duty announcements",
+        "FMCG segment margin trajectory",
+        "Hotels segment scale-up timeline"
+      ]
+    },
+    {
+      "id": "sig-tatasteel-sast-filing",
+      "ticker": "TATASTEEL",
+      "company": "Tata Steel",
+      "sector": "Metals & Mining",
+      "signal_type": "SAST Filing",
+      "headline": "Tata Sons increased its consolidated Tata Steel stake by 0.94% via market purchase — a rare SAST-crossing accumulation event.",
+      "summary": "SAST Rule 29(2) disclosures of greater than 0.5% single-quarter accumulation have been followed by at least 8% upside in similar precedents across the Tata group over the past five years.",
+      "confidence": 0.81,
+      "anomaly_score": 3.1,
+      "z_score": 2.6,
+      "historical_win_rate": 0.80,
+      "avg_30d_return": 0.081,
+      "impact_score": 84,
+      "age_minutes": 58,
+      "portfolio_impact_pct": 0.0,
+      "sources": [
+        "SEBI SAST filing (Rule 29-2)",
+        "NSE corporate announcements"
+      ],
+      "reasoning_steps": [
+        "Detected SAST Rule 29(2) filing in the NSE corporate action feed.",
+        "Quantified accumulation at 0.94% — exceeds the 0.5% signal threshold.",
+        "Cross-referenced with five prior Tata group SAST-crossing events.",
+        "80% of prior events resolved with 8%+ upside within 45 trading days."
+      ],
+      "watch_items": [
+        "UK Corus restructuring news",
+        "Global steel price cycle position",
+        "Debt reduction timeline from management"
+      ]
+    },
+    {
+      "id": "sig-hdfcbank-pledging-change",
+      "ticker": "HDFCBANK",
+      "company": "HDFC Bank",
+      "sector": "Financial Services",
+      "signal_type": "Promoter Pledging Change",
+      "headline": "Promoter pledge release of 0.3% signals improved balance sheet confidence ahead of results.",
+      "summary": "HDFC Bank's promoter group released pledged shares ahead of the upcoming quarterly results cycle. Pledge releases preceding results have historically correlated with positive earnings surprises in banking stocks.",
+      "confidence": 0.69,
+      "anomaly_score": 1.9,
+      "z_score": 1.7,
+      "historical_win_rate": 0.67,
+      "avg_30d_return": 0.041,
+      "impact_score": 63,
+      "age_minutes": 145,
+      "portfolio_impact_pct": 3.1,
+      "sources": [
+        "SEBI promoter pledging disclosure",
+        "BSE corporate filings"
+      ],
+      "reasoning_steps": [
+        "Detected pledge release in SEBI quarterly pledging disclosure.",
+        "Release amount: 0.3% of outstanding shares worth ~₹2,800 crore.",
+        "Cross-referenced pledge activity with 8 prior HDFCBANK results cycles.",
+        "Pledge releases within 30 days of results correlated with beats in 67% of cases."
+      ],
+      "watch_items": [
+        "NIM trend in Q4 results",
+        "CASA ratio versus prior quarter",
+        "Credit cost guidance from management"
+      ]
+    },
+    {
+      "id": "sig-niftyit-fii-rotation",
+      "ticker": "NIFTY_IT",
+      "company": "Nifty IT Index",
+      "sector": "Information Technology",
+      "signal_type": "Sector FII/DII Flow",
+      "headline": "FII net buyers in IT for 8 consecutive sessions — longest inflow streak since Q3 2024.",
+      "summary": "Eight-session consecutive FII buying in the IT sector is a rare event. Prior occurrences have been followed by an average 11.2% sector performance over 60 days in 5 out of 6 historical cases.",
+      "confidence": 0.82,
+      "anomaly_score": 3.2,
+      "z_score": 2.7,
+      "historical_win_rate": 0.83,
+      "avg_30d_return": 0.074,
+      "impact_score": 86,
+      "age_minutes": 22,
+      "portfolio_impact_pct": 2.3,
+      "sources": [
+        "NSDL FII net data",
+        "SEBI sector flow aggregation"
+      ],
+      "reasoning_steps": [
+        "Aggregated daily FII sector-level flow for trailing 10 sessions.",
+        "Detected 8 consecutive positive days — 3.2σ above rolling mean.",
+        "Identified five prior instances of ≥7 consecutive positive FII days in IT.",
+        "5 out of 6 resolved positively at 30-day mark with avg 11.2% sector return."
+      ],
+      "watch_items": [
+        "US discretionary IT spending cues",
+        "INR/USD rate trajectory impact on revenue hedging",
+        "TCS and Infosys management guidance tone in upcoming earnings"
+      ]
+    }
+  ],
+  "patterns": [
+    {
+      "id": "pat-hdfcbank-golden-cross",
+      "ticker": "HDFCBANK",
+      "company": "HDFC Bank",
+      "pattern_type": "Golden Cross",
+      "confidence": 0.78,
+      "occurrences": 9,
+      "wins": 7,
+      "avg_30d_return": 0.084,
+      "narrative": "The 50-day moving average has crossed above the 200-day moving average with expanding volume, confirming trend reversal strength. Historically this pattern has worked best when the Nifty is not already in a correction regime.",
+      "context": "Current market breadth is neutral, which is closer to the successful historical cases than the failed ones. Financial services sector holding up better than broader indices.",
+      "risk_flags": [
+        "Broader market weakness could override individual setup",
+        "Watch for NIM compression risk in next earnings"
+      ],
+      "reward_risk_ratio": 2.8
+    },
+    {
+      "id": "pat-reliance-bollinger-squeeze",
+      "ticker": "RELIANCE",
+      "company": "Reliance Industries",
+      "pattern_type": "Bollinger Squeeze Breakout",
+      "confidence": 0.74,
+      "occurrences": 11,
+      "wins": 8,
+      "avg_30d_return": 0.061,
+      "narrative": "Volatility compression has resolved upward with confirming volume above the 20-day average. Similar breakouts from Bollinger squeezes have trended for three to five weeks in Reliance's history.",
+      "context": "Energy and telecom leadership both improved into the breakout, providing dual business tailwinds.",
+      "risk_flags": [
+        "Global crude oil price volatility",
+        "Telecom tariff competition risk"
+      ],
+      "reward_risk_ratio": 2.2
+    },
+    {
+      "id": "pat-tatamotors-support-retest",
+      "ticker": "TATAMOTORS",
+      "company": "Tata Motors",
+      "pattern_type": "Support Retest With Volume Confirmation",
+      "confidence": 0.69,
+      "occurrences": 13,
+      "wins": 8,
+      "avg_30d_return": 0.049,
+      "narrative": "Price is retesting a prior multi-session support base while buyers have stepped in on above-average volume, confirming the floor is holding.",
+      "context": "The setup is constructive but remains more sensitive to index weakness than the large-cap banking leaders. EV transition volume pickup is the key fundamental catalyst to watch.",
+      "risk_flags": [
+        "JLR supply chain uncertainty",
+        "Index weakness amplifier"
+      ],
+      "reward_risk_ratio": 1.8
+    },
+    {
+      "id": "pat-zomato-cup-handle",
+      "ticker": "ZOMATO",
+      "company": "Zomato",
+      "pattern_type": "Cup and Handle",
+      "confidence": 0.76,
+      "occurrences": 5,
+      "wins": 4,
+      "avg_30d_return": 0.092,
+      "narrative": "After a smooth 8-week cup formation, a tight 2-week handle consolidation completed with a volume-backed breakout above ₹248. Classic cup magnitude target projects towards ₹290.",
+      "context": "Breakout coincides with improving quick-commerce margin narrative. Consumer internet sector breadth is constructive.",
+      "risk_flags": [
+        "Relatively short listing history limits back-test robustness",
+        "High short-term IV means options premiums are expensive"
+      ],
+      "reward_risk_ratio": 3.1
+    },
+    {
+      "id": "pat-persistent-flag-breakout",
+      "ticker": "PERSISTENT",
+      "company": "Persistent Systems",
+      "pattern_type": "Bull Flag",
+      "confidence": 0.80,
+      "occurrences": 7,
+      "wins": 6,
+      "avg_30d_return": 0.088,
+      "narrative": "A sharp 12% rally over 6 sessions was followed by a tight 10-day sideways consolidation on declining volume — a textbook bull flag. Volume surged 2.3x on the breakout session.",
+      "context": "The flag pole started from the point of the promoter accumulation disclosure, suggesting institutional validation of the signal. IT peers also held up during the consolidation.",
+      "risk_flags": [
+        "Broad IT sector correction would override the setup"
+      ],
+      "reward_risk_ratio": 3.4
+    },
+    {
+      "id": "pat-itc-double-bottom",
+      "ticker": "ITC",
+      "company": "ITC Ltd",
+      "pattern_type": "Double Bottom",
+      "confidence": 0.71,
+      "occurrences": 6,
+      "wins": 4,
+      "avg_30d_return": 0.063,
+      "narrative": "ITC tested the ₹415 level twice within a 3-week span with the second test showing lower volume — a classic double bottom confirmation. Neckline resistance at ₹438 was broken with above-average volume.",
+      "context": "FMCG sector breadth improved in the week of the breakout. Cigarette excise overhang has partially receded following budget clarity.",
+      "risk_flags": [
+        "Volume on neckline break was only 1.4x average — ideally above 1.5x",
+        "Excise duty risk in supplementary budget"
+      ],
+      "reward_risk_ratio": 2.3
+    },
+    {
+      "id": "pat-tatasteel-head-shoulders-inv",
+      "ticker": "TATASTEEL",
+      "company": "Tata Steel",
+      "pattern_type": "Inverse Head and Shoulders",
+      "confidence": 0.72,
+      "occurrences": 4,
+      "wins": 3,
+      "avg_30d_return": 0.071,
+      "narrative": "A textbook inverse H&S formed over 14 weeks with the head at ₹138, shoulders roughly symmetric at ₹152–154. Neckline at ₹168 was cleared on volume 2.1x the 30-day average.",
+      "context": "China steel production cuts have improved export opportunity. The SAST filing signal adds a fundamental overlay to this technical setup.",
+      "risk_flags": [
+        "Global metals cycle sensitivity",
+        "UK Corus headline risk"
+      ],
+      "reward_risk_ratio": 2.6
+    }
+  ],
+  "portfolio_demo": {
+    "name": "Sample Investor Portfolio",
+    "currency": "INR",
+    "holdings": [
+      {
+        "asset_type": "Equity",
+        "name": "HDFC Bank",
+        "symbol": "HDFCBANK",
+        "sector": "Financial Services",
+        "units": 15,
+        "invested_amount": 24000,
+        "current_value": 27150,
+        "years_held": 2.2,
+        "lookthrough_exposure": {}
+      },
+      {
+        "asset_type": "Equity",
+        "name": "Persistent Systems",
+        "symbol": "PERSISTENT",
+        "sector": "Information Technology",
+        "units": 6,
+        "invested_amount": 28500,
+        "current_value": 32100,
+        "years_held": 1.4,
+        "lookthrough_exposure": {}
+      },
+      {
+        "asset_type": "Equity",
+        "name": "Reliance Industries",
+        "symbol": "RELIANCE",
+        "sector": "Energy",
+        "units": 8,
+        "invested_amount": 19200,
+        "current_value": 21440,
+        "years_held": 3.1,
+        "lookthrough_exposure": {}
+      },
+      {
+        "asset_type": "Equity",
+        "name": "ITC Ltd",
+        "symbol": "ITC",
+        "sector": "Consumer Goods",
+        "units": 50,
+        "invested_amount": 19500,
+        "current_value": 21850,
+        "years_held": 2.8,
+        "lookthrough_exposure": {}
+      },
+      {
+        "asset_type": "Mutual Fund",
+        "name": "Axis Bluechip Fund",
+        "symbol": "AXISBLUE",
+        "sector": "Diversified",
+        "units": 210.4,
+        "invested_amount": 18000,
+        "current_value": 20550,
+        "years_held": 1.9,
+        "lookthrough_exposure": {
+          "HDFCBANK": 0.084,
+          "RELIANCE": 0.074,
+          "ICICIBANK": 0.071
+        }
+      },
+      {
+        "asset_type": "Mutual Fund",
+        "name": "Parag Parikh Flexi Cap Fund",
+        "symbol": "PPFCF",
+        "sector": "Diversified",
+        "units": 110.7,
+        "invested_amount": 22000,
+        "current_value": 25680,
+        "years_held": 2.8,
+        "lookthrough_exposure": {
+          "HDFCBANK": 0.064,
+          "ZOMATO": 0.031,
+          "ITC": 0.028
+        }
+      },
+      {
+        "asset_type": "ETF",
+        "name": "Nifty BeES",
+        "symbol": "NIFTYBEES",
+        "sector": "Diversified",
+        "units": 320,
+        "invested_amount": 15000,
+        "current_value": 17280,
+        "years_held": 4.2,
+        "lookthrough_exposure": {
+          "HDFCBANK": 0.133,
+          "RELIANCE": 0.089,
+          "ICICIBANK": 0.072,
+          "INFY": 0.058
+        }
+      },
+      {
+        "asset_type": "Mutual Fund",
+        "name": "Nippon India Gold Savings Fund",
+        "symbol": "GOLDNIPPON",
+        "sector": "Commodities",
+        "units": 1200,
+        "invested_amount": 12000,
+        "current_value": 14400,
+        "years_held": 5.0,
+        "lookthrough_exposure": {}
+      }
+    ]
+  },
+  "stories": {
+    "daily_video": {
+      "title": "Daily Market Wrap — March 23, 2026",
+      "published_at": "2026-03-23T17:15:00+05:30",
+      "duration_seconds": 84,
+      "summary": "Nifty closed marginally higher, banks stabilized, IT stayed selective, and a promoter-accumulation alert in Persistent Systems led the AI radar.",
+      "embed_url": "https://example.com/marketnerve/daily-wrap",
+      "mp4_url": "https://example.com/marketnerve/daily-wrap.mp4"
+    },
+    "arcs": [
+      {
+        "slug": "zomato-profitability-journey",
+        "title": "Zomato Profitability Journey",
+        "thesis": "How execution discipline moved the narrative from growth anxiety to operating leverage over 24 months.",
+        "sentiment": "constructive",
+        "events": [
+          {
+            "date": "2024-03-15",
+            "label": "First quarterly PAT positive since listing",
+            "source": "Q4 FY24 results"
+          },
+          {
+            "date": "2024-08-01",
+            "label": "Margin expansion becomes consistently visible",
+            "source": "Q1 FY25 results"
+          },
+          {
+            "date": "2025-04-19",
+            "label": "Quick-commerce unit economics improve sharply",
+            "source": "ET Markets analysis"
+          },
+          {
+            "date": "2026-03-20",
+            "label": "Contribution margin and order growth inflect together again",
+            "source": "Q3 FY26 shareholder update"
+          }
+        ]
+      },
+      {
+        "slug": "hdfc-merger-integration",
+        "title": "HDFC Merger Integration",
+        "thesis": "A multi-year timeline of operating integration, deposit mix rebalancing, and post-merger market expectation management.",
+        "sentiment": "neutral",
+        "events": [
+          {
+            "date": "2023-07-01",
+            "label": "Merger effective — HDFC Ltd absorbed into HDFC Bank",
+            "source": "NCLT approval order"
+          },
+          {
+            "date": "2024-01-05",
+            "label": "Initial integration milestones disclosed at AGM",
+            "source": "Company filing"
+          },
+          {
+            "date": "2025-09-30",
+            "label": "Cost synergies begin showing in NIM commentary",
+            "source": "Q2 FY26 management commentary"
+          },
+          {
+            "date": "2026-02-15",
+            "label": "CASA ratio recovers toward pre-merger range",
+            "source": "Monthly banking sector data"
+          }
+        ]
+      },
+      {
+        "slug": "adani-group-recovery",
+        "title": "Adani Group Post-Hindenburg Recovery",
+        "thesis": "How the Adani group rebuilt institutional confidence after the Hindenburg short-seller report through auditor validations, debt repayments, and FII re-entry.",
+        "sentiment": "cautiously-positive",
+        "events": [
+          {
+            "date": "2023-02-01",
+            "label": "Hindenburg report triggers 60% market cap wipeout in two weeks",
+            "source": "Hindenburg Research publication"
+          },
+          {
+            "date": "2023-09-20",
+            "label": "GQG Partners discloses fresh $1.87B stake — first major FII re-entry",
+            "source": "SEC Form 13F"
+          },
+          {
+            "date": "2024-06-15",
+            "label": "Holcim deal closes — strengthens balance sheet credibility",
+            "source": "Company press release"
+          },
+          {
+            "date": "2025-11-01",
+            "label": "US DOJ superseding indictment adds headline risk",
+            "source": "US DOJ court filing"
+          },
+          {
+            "date": "2026-02-28",
+            "label": "Group debt profile markedly improved; FII allocation resuming selectively",
+            "source": "FII 13F aggregation"
+          }
+        ]
+      },
+      {
+        "slug": "nifty-it-fii-rotation",
+        "title": "Nifty IT — The FII Re-rating Cycle",
+        "thesis": "How FII positioning in Indian IT went from a year of outflows to the strongest consecutive inflow streak since Q3 2024.",
+        "sentiment": "bullish",
+        "events": [
+          {
+            "date": "2024-11-01",
+            "label": "FII net sellers in IT for 14 consecutive sessions — sector underperforms Nifty by 8%",
+            "source": "NSDL data"
+          },
+          {
+            "date": "2025-03-12",
+            "label": "Infosys FY26 guidance beats consensus — triggers sector re-rating",
+            "source": "Infosys Q4 FY25 results"
+          },
+          {
+            "date": "2025-09-05",
+            "label": "US Fed rate cuts unlock IT budget thaw narrative",
+            "source": "Fed FOMC minutes"
+          },
+          {
+            "date": "2026-03-15",
+            "label": "8-session FII inflow streak — longest since Q3 2024",
+            "source": "NSDL FII sector flow (current signal)"
+          }
+        ]
+      },
+      {
+        "slug": "india-ofs-ipo-surge-2026",
+        "title": "India IPO & OFS Wave 2026",
+        "thesis": "The 2026 primary market supercycle driven by PE exits, DII appetite, and retail participation through UPI-linked ASBA.",
+        "sentiment": "high-activity",
+        "events": [
+          {
+            "date": "2025-04-01",
+            "label": "SEBI eases OFS norms for promoters above 25% stake",
+            "source": "SEBI circular OFS/2025/04"
+          },
+          {
+            "date": "2025-11-20",
+            "label": "Record 65 IPOs in FY26 H1 — highest since FY22",
+            "source": "NSE primary market data"
+          },
+          {
+            "date": "2026-02-10",
+            "label": "Aether Mobility IPO oversubscribed 12.4x — GMP at ₹118",
+            "source": "NSE GMP tracker"
+          },
+          {
+            "date": "2026-03-23",
+            "label": "Prism Diagnostics IPO open — subscription tracking 5.8x on Day 2",
+            "source": "NSE real-time subscription data"
+          }
+        ]
+      }
+    ]
+  },
+  "ipos": [
+    {
+      "name": "Aether Mobility Limited",
+      "gmp": 118,
+      "subscription_multiple": 12.4,
+      "allotment_probability": 0.17,
+      "cutoff_price": 420,
+      "listing_date": "2026-03-28",
+      "summary": "Asset-light EV components player with healthy export mix and strong order book. Pricing leaves less room for execution misses but institutional demand is strong at 15x in QIB category."
+    },
+    {
+      "name": "Prism Diagnostics",
+      "gmp": 42,
+      "subscription_multiple": 5.8,
+      "allotment_probability": 0.31,
+      "cutoff_price": 310,
+      "listing_date": "2026-04-01",
+      "summary": "Pan-India diagnostics chain with improving ROCE (19.2%) and regional density in Tier 2 cities. Revenue growth of 28% YoY balanced by slower cash conversion cycle."
+    },
+    {
+      "name": "NexGen Fintech Solutions",
+      "gmp": 75,
+      "subscription_multiple": 8.9,
+      "allotment_probability": 0.21,
+      "cutoff_price": 195,
+      "listing_date": "2026-04-05",
+      "summary": "B2B payments infrastructure play with 3 major PSU bank partnerships. Relatively asset-light model with high NRR of 142%. Some key-man concentration risk."
+    },
+    {
+      "name": "BharatSemi Technologies",
+      "gmp": 28,
+      "subscription_multiple": 3.4,
+      "allotment_probability": 0.48,
+      "cutoff_price": 850,
+      "listing_date": "2026-04-10",
+      "summary": "Semiconductor design services company targeting automotive and industrial IoT. Beneficiary of India semiconductor PLI scheme. Higher valuation requires strong execution delivery."
+    }
+  ],
+  "health": {
+    "status": "healthy",
+    "agent_status": {
+      "signal_scout": "ready",
+      "pattern_mind": "ready",
+      "portfolio_lens": "ready",
+      "story_engine": "ready",
+      "orchestrator": "ready"
+    },
+    "data_freshness_minutes": 8,
+    "api_p95_ms": 182,
+    "total_signals_processed": 2847,
+    "uptime_minutes": 4320
+  }
+}

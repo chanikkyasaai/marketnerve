@@ -1,0 +1,11 @@
+{
+  "name": "marketnerve",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev",
+    "test:web": "npm --workspace apps/web run test"
+  }
+}
