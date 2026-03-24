@@ -1,8 +1,28 @@
-fastapi==0.116.1
-uvicorn==0.35.0
-pydantic==2.11.7
-pydantic-settings==2.7.0
-pytest==8.4.1
-pytest-asyncio==0.24.0
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+pydantic==2.11.1
+pydantic-settings==2.8.1
 httpx==0.28.1
-anyio==4.8.0
+
+# Database
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# Cache uses httpx (Upstash REST API - no extra lib needed)
+
+# AI
+google-generativeai==0.8.5
+
+# Market data & technical analysis
+yfinance==0.2.54
+pandas==2.2.3
+pandas_ta==0.3.14b
+numpy==1.26.4
+
+# Background scheduler
+apscheduler==3.10.4
+
+# Testing
+pytest==8.4.1
+pytest-asyncio==0.25.3
+anyio==4.9.0

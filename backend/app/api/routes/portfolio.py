@@ -1,24 +1,36 @@
-from __future__ import annotations
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+from app.services.portfolio import analyze_portfolio, answer_question
 
-from fastapi import APIRouter
-
-from app.models.schemas import PortfolioQueryRequest, PortfolioUploadRequest
-from app.services.portfolio import analyze_portfolio, answer_portfolio_question
-
-
-router = APIRouter(prefix="/portfolio", tags=["portfolio"])
+router = APIRouter()
 
 
-@router.post("/analyze")
-def portfolio_analyze(payload: PortfolioUploadRequest) -> dict:
-    return analyze_portfolio(payload.csv_text, payload.use_demo_data, payload.zero_retention_mode).model_dump()
+class PortfolioRequest(BaseModel):
+    csv_text: Optional[str] = None
+    use_demo_data: bool = False
 
 
-@router.post("/query")
-def portfolio_query(payload: PortfolioQueryRequest) -> dict:
-    return answer_portfolio_question(
-        payload.question,
-        payload.csv_text,
-        payload.use_demo_data,
-        payload.zero_retention_mode,
-    ).model_dump()
+class QueryRequest(BaseModel):
+    question: str
+    csv_text: Optional[str] = None
+    use_demo_data: bool = False
+
+
+@router.post("/portfolio/analyze")
+async def analyze(req: PortfolioRequest):
+    return await analyze_portfolio(
+        csv_text=req.csv_text or "",
+        use_demo_data=req.use_demo_data,
+    )
+
+
+@router.post("/portfolio/query")
+async def query(req: QueryRequest):
+    # Get portfolio data first, then ask Gemini
+    portfolio = await analyze_portfolio(
+        csv_text=req.csv_text or "",
+        use_demo_data=req.use_demo_data,
+    )
+    result = await answer_question(req.question, portfolio)
+    return result
