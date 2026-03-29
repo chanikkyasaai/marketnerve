@@ -80,7 +80,7 @@ async def run_pattern_pipeline(pool=None) -> list[dict]:
 
         patterns = detect_patterns(ticker, df)
         for pat in patterns[:2]:  # Max 2 patterns per stock
-            if settings.has_gemini and processed < 10:  # Limit Gemini calls
+            if settings.has_ai and processed < 10:  # Limit AI calls
                 try:
                     gem = await generate_pattern_narrative(snap, pat)
                     await asyncio.sleep(1.1)

@@ -73,13 +73,19 @@ async def lifespan(app: FastAPI):
     logger.info(f"  Redis:     {'✅' if settings.has_redis else '❌'}")
     logger.info("=" * 50)
 
-    # Run DB migrations
-    await run_migrations()
+    # Run DB migrations (non-fatal — falls back to seed data if DB unreachable)
+    try:
+        await run_migrations()
+    except Exception as e:
+        logger.warning(f"⚠️  DB migration skipped (offline mode): {e}")
 
-    # Wire repository to DB pool
+    # Wire repository to DB pool (non-fatal)
     if settings.has_database:
-        pool = await get_pool()
-        repository.set_pool(pool)
+        try:
+            pool = await get_pool()
+            repository.set_pool(pool)
+        except Exception as e:
+            logger.warning(f"⚠️  DB pool unavailable, using seed data: {e}")
 
     # Launch background pipeline as asyncio task
     _pipeline_task = asyncio.create_task(_run_pipeline_loop())
@@ -113,10 +119,11 @@ app.add_middleware(
 )
 
 # Mount all routers
-from app.api.routes import health, signals, patterns, portfolio, story, ipo
+from app.api.routes import health, signals, patterns, portfolio, story, ipo, chat
 app.include_router(health.router, prefix="/api")
 app.include_router(signals.router, prefix="/api")
 app.include_router(patterns.router, prefix="/api")
 app.include_router(portfolio.router, prefix="/api")
 app.include_router(story.router, prefix="/api")
 app.include_router(ipo.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")

@@ -15,27 +15,29 @@ from app.services.signals import (
     list_signals,
 )
 
+pytestmark = pytest.mark.asyncio
+
 
 class TestListSignals:
-    def test_signals_are_ranked_by_impact_score(self):
-        signals = list_signals()
+    async def test_signals_are_ranked_by_impact_score(self):
+        signals = await list_signals()
         for i in range(len(signals) - 1):
-            assert signals[i].impact_score >= signals[i + 1].impact_score
+            assert signals[i]["impact_score"] >= signals[i + 1]["impact_score"]
 
-    def test_signals_have_all_required_fields(self):
-        signals = list_signals()
+    async def test_signals_have_all_required_fields(self):
+        signals = await list_signals()
         assert len(signals) > 0
         s = signals[0]
-        assert s.id
-        assert s.ticker
-        assert s.company
-        assert s.sector
-        assert s.headline
-        assert s.summary
-        assert 0 < s.confidence <= 1.0
-        assert s.impact_score > 0
-        assert s.anomaly_score >= 0
-        assert s.z_score != 0.0 or s.anomaly_score >= 0  # at least one non-zero
+        assert s["id"]
+        assert s["ticker"]
+        assert s["company"]
+        assert s["sector"]
+        assert s["headline"]
+        assert s["summary"]
+        assert 0 < s["confidence"] <= 1.0
+        assert s["impact_score"] > 0
+        assert s["anomaly_score"] >= 0
+        assert s["z_score"] != 0.0 or s["anomaly_score"] >= 0  # at least one non-zero
 
     def test_signals_tagged_source_cited(self):
         signals = list_signals()

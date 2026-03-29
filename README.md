@@ -1,57 +1,123 @@
 # MarketNerve
 
-MarketNerve is a full-stack prototype of an autonomous market-intelligence product for Indian equities. This repository implements the hackathon priority stack from the product document: Signal Scout, Pattern Mind, Portfolio Lens, Story Engine, IPO Intelligence, and the shared audit trail.
+MarketNerve is an AI intelligence layer for Indian retail investors.
+It turns noisy market data into actionable decisions across signals, chart patterns, portfolio diagnostics, narrative intelligence, and IPO tracking.
 
-The current build is backend-aware rather than purely static:
+## Problem Statement
 
-- frontend pages fetch from the FastAPI intelligence layer when it is available
-- resilient seed-data fallbacks keep the product demoable offline
-- Portfolio Lens supports analysis and Q&A requests against demo data or pasted CSV text
-- signals, patterns, and story views expose real filtering and search flows
+India has 14 crore+ demat accounts, but most retail participants still operate with fragmented signals, delayed interpretation, and limited portfolio intelligence.
 
-## Monorepo layout
+The objective is not to summarize data. The objective is to identify money-making opportunities earlier, explain why they matter, and provide auditable evidence.
 
-- `apps/web`: Next.js App Router frontend
-- `backend`: FastAPI backend and domain services
-- `config/marketnerve.seed.json`: shared demo dataset used by frontend and backend
-- `docs`: architecture notes, build log, and environment guidance
+## What MarketNerve Builds
 
-## Local setup
+1. Opportunity Radar
+- Detects filing, flow, and anomaly opportunities and ranks by actionable score.
 
-### 1. Frontend
+2. Chart Pattern Intelligence
+- Scans technical setups, explains context in plain English, and reports historical success rates.
+
+3. Market ChatGPT Next Gen
+- Provides source-cited, portfolio-aware responses with confidence and evidence highlights.
+
+4. AI Market Video Engine
+- Produces a daily market wrap plan with script outline, scene plan, render status, and output targets.
+
+## Product Modules
+
+- Signal Scout
+- Pattern Mind
+- Portfolio Lens
+- Story Engine
+- IPO Intelligence
+- Audit Trail
+
+## Tech Stack
+
+- Frontend: Next.js App Router, React, Framer Motion
+- Backend: FastAPI, Pydantic, async services
+- Data: NSE and BSE fetchers, yfinance, Redis cache, PostgreSQL persistence
+- AI: Mistral primary, Gemini fallback, structured JSON generation
+
+## Monorepo Structure
+
+- apps/web: user-facing web experience
+- backend: intelligence APIs, data pipelines, scoring logic
+- config/marketnerve.seed.json: deterministic fallback and bootstrap dataset
+- docs: architecture and product documentation
+
+## Quick Start
+
+1. Install dependencies
 
 ```bash
 cd apps/web
 npm install
-npm run dev
 ```
 
-### 2. Backend
-
 ```bash
-cd backend
+cd ../backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
 ```
 
-The frontend expects the backend at `http://localhost:8000` by default. Override `NEXT_PUBLIC_API_BASE_URL` in `apps/web/.env.local` if needed.
+2. Start backend
 
-## Testing
+```bash
+cd backend
+python -m uvicorn app.main:app --reload
+```
+
+3. Start frontend from repo root
+
+```bash
+npm run dev:web
+```
+
+Frontend runs on http://localhost:3000 and calls backend on http://localhost:8000 by default.
+
+## Key Endpoints
+
+- GET /api/signals
+- GET /api/signals/performance
+- GET /api/signals/calibration
+- GET /api/patterns/scan
+- GET /api/story/arcs
+- GET /api/story/video/latest
+- POST /api/story/video/generate
+- POST /api/chat
+- POST /api/portfolio/analyze
+- POST /api/portfolio/query
+- GET /api/health
+
+## Build and Test
+
+```bash
+cd apps/web
+npm run build
+npm test
+```
 
 ```bash
 cd backend
 pytest
 ```
 
-```bash
-cd apps/web
-npm test
-```
+## Demo Checklist
 
-## Environment
+Before presenting:
 
-Copy the root `.env.example`, `apps/web/.env.example`, and `backend/.env.example` into real env files when you are ready to plug in live providers.
+1. Start backend and verify GET /api/health returns healthy.
+2. Start frontend via npm run dev:web.
+3. Verify Home, Signals, Chat, Portfolio, Story all load.
+4. Trigger video generation and show queued to rendering to ready flow.
+5. Open audit trails from Opportunity Radar evidence links.
 
-No API keys are required for the seeded demo mode. Keys become relevant only when switching from seeded data to live LLM, auth, database, or queue integrations.
+## Documentation
+
+- Detailed blueprint: docs/PRODUCT_BLUEPRINT.md
+- Architecture notes: docs/ARCHITECTURE.md
+- PlantUML diagram source: docs/arch.puml
+- Architecture image placeholder: docs/arch.png
+

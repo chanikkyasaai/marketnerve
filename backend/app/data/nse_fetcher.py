@@ -42,7 +42,7 @@ async def _fetch_nse_json(path: str) -> list | dict | None:
     return None
 
 async def fetch_bulk_deals() -> list[dict]:
-    """Fetch today's NSE bulk/block deals."""
+    """Fetch today's NSE bulk deals."""
     data = await _fetch_nse_json("bulk-deals")
     if not data:
         return []
@@ -54,9 +54,53 @@ async def fetch_bulk_deals() -> list[dict]:
             "trade_type": d.get("buySell", ""),
             "quantity": d.get("quantityTraded", 0),
             "price": d.get("tradePrice", 0),
+            "value_cr": round((float(d.get("quantityTraded", 0)) * float(d.get("tradePrice", 0))) / 10000000, 2)
         }
-        for d in deals[:20]
+        for d in deals[:30]
     ]
+
+async def fetch_block_deals() -> list[dict]:
+    """Fetch today's NSE block deals."""
+    data = await _fetch_nse_json("block-deal")
+    if not data:
+        return []
+    deals = data if isinstance(data, list) else data.get("data", [])
+    return [
+        {
+            "ticker": d.get("symbol", ""),
+            "client": d.get("clientName", ""),
+            "trade_type": d.get("buySell", ""),
+            "quantity": d.get("quantityTraded", 0),
+            "price": d.get("tradePrice", 0),
+            "value_cr": round((float(d.get("quantityTraded", 0)) * float(d.get("tradePrice", 0))) / 10000000, 2)
+        }
+        for d in deals[:30]
+    ]
+
+async def fetch_live_quote(symbol: str) -> dict:
+    """Fetch live quote for a symbol from NSE."""
+    # Clean symbol for NSE (remove .NS if present)
+    clean_symbol = symbol.replace(".NS", "").upper()
+    data = await _fetch_nse_json(f"quote-equity?symbol={clean_symbol}")
+    if not data or "priceInfo" not in data:
+        return {}
+    
+    p = data["priceInfo"]
+    m = data.get("metadata", {})
+    return {
+        "ticker": clean_symbol,
+        "company": m.get("companyName", ""),
+        "last_price": p.get("lastPrice", 0),
+        "change": p.get("change", 0),
+        "p_change": p.get("pChange", 0),
+        "open": p.get("open", 0),
+        "high": p.get("intraDayHighLow", {}).get("max", 0),
+        "low": p.get("intraDayHighLow", {}).get("min", 0),
+        "close": p.get("close", 0),
+        "vwap": p.get("vwap", 0),
+        "volume": data.get("marketDeptOrderBook", {}).get("tradeInfo", {}).get("totalTradedVolume", 0),
+        "value_cr": round(data.get("marketDeptOrderBook", {}).get("tradeInfo", {}).get("totalTradedValue", 0) / 100, 2),
+    }
 
 async def fetch_fii_dii() -> dict:
     """Fetch latest FII/DII trading activity."""

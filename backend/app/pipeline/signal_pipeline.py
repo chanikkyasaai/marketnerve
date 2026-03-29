@@ -12,7 +12,14 @@ import uuid
 from datetime import datetime, timezone
 
 from app.data.yfinance_fetcher import fetch_all_snapshots, WATCHLIST
-from app.data.nse_fetcher import fetch_corporate_announcements, fetch_fii_dii, format_announcements_for_gemini
+from app.data.nse_fetcher import (
+    fetch_corporate_announcements, 
+    fetch_fii_dii, 
+    format_announcements_for_gemini,
+    fetch_bulk_deals,
+    fetch_block_deals
+)
+from app.data.bse_fetcher import fetch_bse_announcements, fetch_sast_disclosures
 from app.ai.gemini_client import generate_signal
 from app.cache.redis_client import cache_set
 from app.core.config import settings
@@ -92,81 +99,103 @@ async def run_signal_pipeline(pool=None) -> list[dict]:
     logger.info("🔄 Signal pipeline starting…")
     signals: list[dict] = []
 
-    # 1. Fetch market snapshots
+    # 1. Fetch market data snapshots (yfinance)
     snapshots = await fetch_all_snapshots()
     if not snapshots:
         logger.warning("No snapshots fetched — yfinance may be rate-limited")
         return []
 
-    # 2. Fetch NSE announcements and FII/DII (in parallel)
-    announcements, fii_dii = await asyncio.gather(
-        fetch_corporate_announcements(),
+    # 2. Fetch Corporate Intelligence (NSE/BSE)
+    # Use gather for parallel fetching
+    tasks = [
         fetch_fii_dii(),
-        return_exceptions=True,
-    )
-    if isinstance(announcements, Exception):
-        announcements = []
-    if isinstance(fii_dii, Exception):
-        fii_dii = {}
-
-    # 3. Filter anomalies and score them
-    candidates = []
+        fetch_bulk_deals(),
+        fetch_block_deals(),
+        fetch_corporate_announcements(),
+        fetch_bse_announcements(),
+        fetch_sast_disclosures()
+    ]
+    fii_dii, bulk_deals, block_deals, nse_filings, bse_filings, sast = await asyncio.gather(*tasks)
+    
+    # 3. Process each snapshot and detect anomalies
+    processed_count = 0
     for snap in snapshots:
-        is_sig, reason = await _is_anomaly(snap)
-        if is_sig:
-            candidates.append((snap, reason))
-
-    # Sort by abs z-score (highest anomaly first)
-    candidates.sort(key=lambda x: abs(x[0].get("z_score", 0)), reverse=True)
-    candidates = candidates[:MAX_SIGNALS_PER_RUN]
-
-    logger.info(f"Found {len(candidates)} signal candidates from {len(snapshots)} stocks")
-
-    # 4. Gemini enrichment (rate-limited: 1 call/sec to stay under 15 RPM)
-    for snap, reason in candidates:
         ticker = snap["ticker"]
-        announcement_text = format_announcements_for_gemini(
-            announcements if isinstance(announcements, list) else [],
-            ticker
-        )
+        is_anomaly, reason = await _is_anomaly(snap)
+        
+        # Check if there are specific filings/deals for this ticker
+        ticker_bulk = [d for d in bulk_deals if d["ticker"].upper() == ticker.upper()]
+        ticker_block = [d for d in block_deals if d["ticker"].upper() == ticker.upper()]
+        ticker_sast = [d for d in sast if d["ticker"].upper() == ticker.upper()]
+        
+        if not is_anomaly and not ticker_bulk and not ticker_block and not ticker_sast:
+            continue
+            
+        # Build context for Gemini
+        filings_text = format_announcements_for_gemini(nse_filings + bse_filings, ticker)
+        if ticker_bulk:
+            filings_text += f"\nBulk Deals: {ticker_bulk}"
+        if ticker_block:
+            filings_text += f"\nBlock Deals: {ticker_block}"
+        if ticker_sast:
+            filings_text += f"\nSAST/Pledge: {ticker_sast}"
 
-        if settings.has_gemini:
+        # 4. Generate Signal (Gemini or Fallback)
+        if settings.has_ai and processed_count < MAX_SIGNALS_PER_RUN:
             try:
-                gemini_out = await generate_signal(snap, announcement_text)
-                await asyncio.sleep(1.1)  # Respect 15 RPM limit
+                # Add delay to respect 15 RPM
+                if processed_count > 0:
+                    await asyncio.sleep(4.0) 
+                
+                sig = await generate_signal(snap, filings_text)
+                processed_count += 1
+                
+                # Enrich with required metadata
+                sig["id"] = f"sig_{ticker}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}"
+                sig["ticker"] = ticker
+                sig["company"] = snap["company"]
+                sig["sector"] = snap["sector"]
+                sig["age_minutes"] = 0
+                sig["sources"] = list(set(sig.get("sources", []) + ["NSE Live", "yfinance", "Corporate Filings"]))
             except Exception as e:
                 logger.error(f"Gemini failed for {ticker}: {e}")
-                gemini_out = None
+                sig = _build_fallback_signal(snap, reason or "Institutional Activity")
         else:
-            gemini_out = None
+            sig = _build_fallback_signal(snap, reason or "Institutional Activity")
 
-        if gemini_out and isinstance(gemini_out, dict) and "headline" in gemini_out:
-            signal = {
-                "id": f"sig_{ticker}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}",
-                "ticker": ticker,
-                "company": snap["company"],
-                "sector": snap["sector"],
-                "age_minutes": 0,
-                "impact_score": min(10, int(gemini_out.get("confidence", 0.7) * 10)),
-                "historical_win_rate": 0.64,
-                "avg_30d_return": 0.062,
-                "sources": ["NSE Feed", "yfinance", "Gemini AI"],
-                **gemini_out,
-            }
-        else:
-            signal = _build_fallback_signal(snap, reason)
+        # Normalize payload so DB insert always has required keys.
+        signals.append(_serialize_signal(sig))
 
-        signals.append(signal)
-
-        # 5. Save to DB
-        if pool:
-            await _save_signal_to_db(pool, signal)
-
-    # 6. Cache in Redis
+    # 5. Save to Storage
     if signals:
-        signal_dicts = [_serialize_signal(s) for s in signals]
-        await cache_set("signals:all", signal_dicts, settings.signal_cache_ttl_seconds)
-        logger.info(f"✅ Signal pipeline done: {len(signals)} signals cached")
+        # Cache in Redis
+        await cache_set("signals:all", signals, settings.signal_cache_ttl_seconds)
+        
+        # Save to DB if pool exists
+        if pool:
+            import json
+            try:
+                async with pool.acquire() as conn:
+                    # Clear old signals or keep last N
+                    # For now, we'll just insert new ones
+                    for s in signals:
+                        await conn.execute("""
+                            INSERT INTO signals (
+                                id, ticker, company, sector, signal_type, headline, summary,
+                                confidence, anomaly_score, z_score, impact_score, reward_risk_ratio,
+                                portfolio_impact_pct, age_minutes, sources, reasoning_steps,
+                                watch_items, tags, historical_win_rate, avg_30d_return, updated_at
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
+                            ON CONFLICT (id) DO UPDATE SET updated_at = NOW()
+                        """, 
+                        s["id"], s["ticker"], s["company"], s["sector"], s["signal_type"], s["headline"], s["summary"],
+                        s["confidence"], s["anomaly_score"], s["z_score"], s["impact_score"], s.get("reward_risk_ratio", 2.0),
+                        s.get("portfolio_impact_pct", 0.0), s["age_minutes"], json.dumps(s["sources"]), json.dumps(s["reasoning_steps"]),
+                        json.dumps(s["watch_items"]), json.dumps(s["tags"]), s.get("historical_win_rate", 0.65), s.get("avg_30d_return", 0.05)
+                        )
+                logger.info(f"✅ Saved {len(signals)} signals to DB")
+            except Exception as e:
+                logger.error(f"Failed to save signals to DB: {e}")
 
     return signals
 

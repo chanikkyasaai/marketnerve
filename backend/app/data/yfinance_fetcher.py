@@ -14,7 +14,16 @@ import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
-# Curated NSE watchlist — 25 stocks across all major sectors
+
+def _to_series(data: pd.Series | pd.DataFrame) -> pd.Series:
+    """Normalize yfinance column slices to a numeric Series."""
+    if isinstance(data, pd.DataFrame):
+        if data.empty:
+            return pd.Series(dtype=float)
+        data = data.iloc[:, 0]
+    return pd.to_numeric(data, errors="coerce").dropna()
+
+# Expanded NSE watchlist — 50 stocks across all major sectors
 WATCHLIST: dict[str, dict] = {
     "RELIANCE":    {"company": "Reliance Industries", "sector": "Energy"},
     "HDFCBANK":    {"company": "HDFC Bank", "sector": "Financial Services"},
@@ -41,6 +50,31 @@ WATCHLIST: dict[str, dict] = {
     "ULTRACEMCO":  {"company": "UltraTech Cement", "sector": "Cement"},
     "NESTLEIND":   {"company": "Nestle India", "sector": "Consumer Goods"},
     "POWERGRID":   {"company": "Power Grid Corp", "sector": "Utilities"},
+    "TITAN":       {"company": "Titan Company", "sector": "Consumer Goods"},
+    "ADANIGREEN":  {"company": "Adani Green Energy", "sector": "Renewables"},
+    "ADANITRANS":  {"company": "Adani Energy Solutions", "sector": "Utilities"},
+    "BHARTIARTL":  {"company": "Bharti Airtel", "sector": "Telecommunication"},
+    "COALINDIA":   {"company": "Coal India", "sector": "Metals & Mining"},
+    "M&M":         {"company": "Mahindra & Mahindra", "sector": "Automobile"},
+    "JSWSTEEL":    {"company": "JSW Steel", "sector": "Metals & Mining"},
+    "ONGC":        {"company": "ONGC", "sector": "Energy"},
+    "HCLTECH":     {"company": "HCL Technologies", "sector": "Information Technology"},
+    "LTIM":        {"company": "LTI Mindtree", "sector": "Information Technology"},
+    "TRENT":       {"company": "Trent Ltd", "sector": "Retail"},
+    "HAL":         {"company": "Hindustan Aeronautics", "sector": "Defense"},
+    "BEL":         {"company": "Bharat Electronics", "sector": "Defense"},
+    "BHEL":        {"company": "Bharat Heavy Electricals", "sector": "Capital Goods"},
+    "IRFC":        {"company": "Indian Railway Finance", "sector": "Financial Services"},
+    "RVNL":        {"company": "Rail Vikas Nigam", "sector": "Infrastructure"},
+    "MAZDOCK":     {"company": "Mazagon Dock", "sector": "Defense"},
+    "JIOFIN":      {"company": "Jio Financial Services", "sector": "Financial Services"},
+    "NYKAA":       {"company": "Nykaa", "sector": "Consumer Internet"},
+    "PAYTM":       {"company": "Paytm", "sector": "Consumer Internet"},
+    "SWIGGY":      {"company": "Swiggy", "sector": "Consumer Internet"},
+    "DLF":         {"company": "DLF Ltd", "sector": "Real Estate"},
+    "LODHA":       {"company": "Macrotech Developers", "sector": "Real Estate"},
+    "GODREJCP":    {"company": "Godrej Consumer Products", "sector": "Consumer Goods"},
+    "VBL":         {"company": "Varun Beverages", "sector": "Consumer Goods"},
 }
 
 def _ema(series: pd.Series, span: int) -> pd.Series:
@@ -71,8 +105,8 @@ def _macd_signal(series: pd.Series) -> str:
 def _compute_snapshot(ticker: str, df: pd.DataFrame) -> dict:
     """Compute all technical indicators from OHLCV dataframe."""
     info = WATCHLIST.get(ticker, {})
-    close = df["Close"].squeeze()
-    volume = df["Volume"].squeeze()
+    close = _to_series(df["Close"])
+    volume = _to_series(df["Volume"])
 
     if len(close) < 20:
         return {}
@@ -119,52 +153,36 @@ def _compute_snapshot(ticker: str, df: pd.DataFrame) -> dict:
 
 
 async def fetch_all_snapshots() -> list[dict]:
-    """Fetch OHLCV data for all watchlist stocks via yfinance."""
-    tickers_ns = [f"{t}.NS" for t in WATCHLIST]
-
-    def _download():
-        return yf.download(
-            " ".join(tickers_ns),
-            period="1y",
-            interval="1d",
-            group_by="ticker",
-            auto_adjust=True,
-            progress=False,
-        )
-
-    try:
-        raw = await asyncio.to_thread(_download)
-    except Exception as e:
-        logger.error(f"yfinance download failed: {e}")
-        return []
-
+    """Fetch snapshots for the entire watchlist."""
+    logger.info(f"Fetching snapshots for {len(WATCHLIST)} stocks…")
     snapshots = []
-    for ticker_ns in tickers_ns:
-        ticker = ticker_ns.replace(".NS", "")
-        try:
-            if isinstance(raw.columns, pd.MultiIndex):
-                df = raw[ticker_ns].dropna()
-            else:
-                df = raw.dropna()
-
-            if df.empty or len(df) < 20:
-                continue
-
-            snap = _compute_snapshot(ticker, df)
-            if snap:
-                snapshots.append(snap)
-        except Exception as e:
-            logger.debug(f"Failed to compute snapshot for {ticker}: {e}")
-            continue
-
-    logger.info(f"✅ yfinance: fetched {len(snapshots)}/{len(WATCHLIST)} stocks")
+    
+    # Process in batches to avoid rate limits
+    batch_size = 5
+    tickers = list(WATCHLIST.keys())
+    
+    for i in range(0, len(tickers), batch_size):
+        batch = tickers[i:i+batch_size]
+        tasks = [fetch_stock_df(t) for t in batch]
+        dfs = await asyncio.gather(*tasks)
+        
+        for t, df in zip(batch, dfs):
+            if df is not None:
+                snap = _compute_snapshot(t, df)
+                if snap:
+                    snapshots.append(snap)
+        
+        # Small sleep between batches
+        if i + batch_size < len(tickers):
+            await asyncio.sleep(1.0)
+            
     return snapshots
 
 
 def detect_patterns(ticker: str, df: pd.DataFrame) -> list[dict]:
     """Detect technical chart patterns from OHLCV data."""
-    close = df["Close"].squeeze()
-    volume = df["Volume"].squeeze()
+    close = _to_series(df["Close"])
+    volume = _to_series(df["Volume"])
     patterns = []
 
     if len(close) < 50:
@@ -212,12 +230,45 @@ def detect_patterns(ticker: str, df: pd.DataFrame) -> list[dict]:
     return patterns
 
 
-async def fetch_stock_df(ticker: str) -> pd.DataFrame | None:
-    """Fetch single stock 1Y OHLCV for pattern detection."""
-    def _dl():
-        return yf.download(f"{ticker}.NS", period="1y", interval="1d", auto_adjust=True, progress=False)
+async def fetch_market_indices() -> dict:
+    """Fetch major Indian market indices status."""
+    indices = {
+        "^NSEI": "Nifty 50",
+        "^BSESN": "Sensex",
+        "NIFTY_IT.NS": "Nifty IT",
+        "NIFTY_BANK.NS": "Nifty Bank",
+    }
+    results = {}
+    for symbol, name in indices.items():
+        try:
+            df = await fetch_stock_df(symbol, period="5d", interval="1d")
+            if df is not None and not df.empty:
+                close = _to_series(df["Close"])
+                if len(close) < 2:
+                    continue
+                curr = float(close.iloc[-1])
+                prev = float(close.iloc[-2])
+                change = curr - prev
+                p_change = (change / prev) * 100
+                results[name] = {
+                    "price": round(curr, 2),
+                    "change": round(change, 2),
+                    "p_change": round(p_change, 2),
+                }
+        except Exception:
+            continue
+    return results
+
+async def fetch_stock_df(ticker: str, period: str = "1y", interval: str = "1d") -> Optional[pd.DataFrame]:
+    """Fetch historical OHLCV from yfinance with .NS suffix."""
+    ns_ticker = f"{ticker}.NS" if not (ticker.endswith(".NS") or ticker.startswith("^")) else ticker
     try:
-        df = await asyncio.to_thread(_dl)
-        return df if not df.empty else None
-    except Exception:
+        # Run yfinance in thread to avoid blocking event loop
+        df = await asyncio.to_thread(yf.download, ns_ticker, period=period, interval=interval, progress=False)
+        if df is None or df.empty:
+            logger.debug(f"yfinance returned empty for {ns_ticker}")
+            return None
+        return df
+    except Exception as e:
+        logger.error(f"yfinance error for {ns_ticker}: {e}")
         return None

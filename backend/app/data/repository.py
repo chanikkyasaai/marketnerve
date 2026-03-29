@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 
-from app.cache.redis_client import cache_get
+from app.cache.redis_client import cache_get, cache_set
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ def _load_seed() -> dict:
             return json.load(f)
     logger.warning(f"Seed file not found at {path}")
     return {}
+
 
 async def _get_from_db_signals(pool) -> list[dict] | None:
     try:
@@ -48,6 +49,7 @@ async def _get_from_db_signals(pool) -> list[dict] | None:
     except Exception as e:
         logger.error(f"DB signals query failed: {e}")
         return None
+
 
 async def _get_from_db_patterns(pool) -> list[dict] | None:
     try:
@@ -81,6 +83,7 @@ class Repository:
     def set_pool(self, pool):
         self._pool = pool
 
+    # ── Signals ────────────────────────────────────────────────
     async def get_signals(self) -> list[dict]:
         # 1. Redis
         cached = await cache_get("signals:all")
@@ -93,32 +96,63 @@ class Repository:
             if from_db:
                 logger.debug(f"Signals: DB hit ({len(from_db)} rows)")
                 return from_db
-        # 3. Seed
+        # 3. Seed fallback
         logger.debug("Signals: using seed fallback")
         return _load_seed().get("signals", [])
 
+    # ── Patterns ───────────────────────────────────────────────
     async def get_patterns(self) -> list[dict]:
+        # 1. Redis
         cached = await cache_get("patterns:all")
         if cached:
             return cached
+        # 2. DB
         if self._pool:
             from_db = await _get_from_db_patterns(self._pool)
             if from_db:
                 return from_db
+        # 3. Seed fallback
         return _load_seed().get("patterns", [])
 
-    def get_portfolio(self) -> dict:
-        return _load_seed().get("portfolio", {})
+    # ── Story arcs ─────────────────────────────────────────────
+    async def get_stories(self) -> dict:
+        """Returns ONLY Redis cache — empty dict if not cached yet (triggers live generation)."""
+        cached = await cache_get("story_arcs")
+        if cached:
+            return {"arcs": cached} if isinstance(cached, list) else cached
+        return {}  # Empty → triggers Gemini generation in story service
 
-    def get_stories(self) -> list[dict]:
-        return _load_seed().get("stories", [])
+    async def get_stories_seed_fallback(self) -> dict:
+        """Seed fallback — only used when Gemini generation also fails."""
+        return _load_seed().get("stories", {"arcs": [], "daily_video": {}})
 
-    def get_ipos(self) -> list[dict]:
+    async def set_stories(self, arcs: list[dict], ttl: int = 7200) -> None:
+        await cache_set("story_arcs", arcs, ttl)
+
+    # ── IPOs ───────────────────────────────────────────────────
+    async def get_ipos(self) -> list[dict]:
+        """Returns ONLY Redis cache — empty list if not cached yet (triggers live generation)."""
+        cached = await cache_get("ipos:live")
+        if cached:
+            return cached
+        return []  # Empty → triggers live fetch in ipo service
+
+    def get_ipos_seed_fallback(self) -> list[dict]:
         return _load_seed().get("ipos", [])
 
-    def get_health(self) -> dict:
+    async def set_ipos(self, ipos: list[dict], ttl: int = 3600) -> None:
+        await cache_set("ipos:live", ipos, ttl)
+
+    # ── Portfolio (session-scoped, not persisted) ──────────────
+    async def get_portfolio(self) -> dict:
+        seed = _load_seed()
+        return seed.get("portfolio") or seed.get("portfolio_demo", {})
+
+    # ── Health ─────────────────────────────────────────────────
+    async def get_health(self) -> dict:
         return _load_seed().get("health", {})
 
+    # ── Pipeline status ────────────────────────────────────────
     async def get_pipeline_status(self) -> dict:
         if not self._pool:
             return {"last_run": "never", "signals_generated": 0}
@@ -133,6 +167,26 @@ class Repository:
         except Exception:
             pass
         return {"last_run": "never", "signals_generated": 0}
+
+    # ── Sync accessors (for legacy code paths) ─────────────────
+    def get_signals_sync(self) -> list[dict]:
+        return _load_seed().get("signals", [])
+
+    def get_patterns_sync(self) -> list[dict]:
+        return _load_seed().get("patterns", [])
+
+    def get_portfolio_sync(self) -> dict:
+        seed = _load_seed()
+        return seed.get("portfolio") or seed.get("portfolio_demo", {})
+
+    def get_stories_sync(self) -> dict:
+        return _load_seed().get("stories", {"arcs": [], "daily_video": {}})
+
+    def get_ipos_sync(self) -> list[dict]:
+        return _load_seed().get("ipos", [])
+
+    def get_health_sync(self) -> dict:
+        return _load_seed().get("health", {})
 
 
 repository = Repository()

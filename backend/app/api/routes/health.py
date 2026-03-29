@@ -9,5 +9,6 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-def health() -> dict:
-    return get_health().model_dump()
+async def health() -> dict:
+    h = await get_health()
+    return h.model_dump() if hasattr(h, "model_dump") else h

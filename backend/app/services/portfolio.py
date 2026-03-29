@@ -13,6 +13,10 @@ from app.ai.gemini_client import answer_portfolio_question
 from app.core.config import settings
 
 
+async def answer_question(question: str, portfolio: dict) -> dict:
+    return await answer_portfolio_question(question, portfolio)
+
+
 def _parse_holdings(csv_text: str) -> list[dict]:
     """Parse CAMS/Zerodha-style CSV."""
     holdings = []
@@ -35,10 +39,19 @@ def _parse_holdings(csv_text: str) -> list[dict]:
     return holdings
 
 
+def parse_holdings(csv_text: str, use_demo_data: bool = False) -> list[dict]:
+    """Parse holdings from CSV text only. No seed data."""
+    return _parse_holdings(csv_text)
+
+
 def _compute_totals(holdings: list[dict]) -> tuple[float, float]:
-    invested = sum(h.get("invested", h.get("current_value", 0)) for h in holdings)
+    invested = sum(h.get("invested") or h.get("invested_amount") or h.get("current_value", 0) for h in holdings)
     current = sum(h.get("current_value", 0) for h in holdings)
     return invested, current
+
+
+def _portfolio_totals(holdings: list[dict]) -> tuple[float, float]:
+    return _compute_totals(holdings)
 
 
 def _xirr(invested: float, current: float, years: float = 2.0) -> float:
@@ -48,6 +61,14 @@ def _xirr(invested: float, current: float, years: float = 2.0) -> float:
     if ratio <= 0:
         return 0.0
     return (ratio ** (1 / years)) - 1
+
+
+def _approx_xirr(invested: float, current: float) -> float:
+    return _xirr(invested, current)
+
+
+def _benchmark_snapshot(alpha: float = 0.0) -> dict:
+    return {"name": "Nifty 50", "p_change": 0.012, "alpha": alpha}
 
 
 def _sector_exposure(holdings: list[dict]) -> list[dict]:
@@ -60,6 +81,16 @@ def _sector_exposure(holdings: list[dict]) -> list[dict]:
         return []
     return sorted(
         [{"name": k, "weight": round(v / total, 4)} for k, v in sector_map.items()],
+        key=lambda x: x["weight"], reverse=True
+    )
+
+
+def _stock_exposure(holdings: list[dict]) -> list[dict]:
+    total = sum(h.get("current_value", 0) for h in holdings)
+    if total <= 0:
+        return []
+    return sorted(
+        [{"ticker": h.get("ticker") or h.get("symbol", ""), "weight": round(h.get("current_value", 0) / total, 4)} for h in holdings],
         key=lambda x: x["weight"], reverse=True
     )
 
@@ -85,10 +116,14 @@ def _health_score(holdings: list[dict], xirr: float, sector_exp: list[dict]) -> 
     }
 
 
+def _money_health_score(holdings: list[dict], xirr: float, sector_exp: list[dict]) -> dict:
+    return _health_score(holdings, xirr, sector_exp)
+
+
 def _overlap_matrix(holdings: list[dict]) -> list[dict]:
     """Fund overlap matrix — shows which MF holdings overlap with direct stocks."""
-    funds = [h for h in holdings if h.get("asset_class") in ("Mutual Fund", "ETF")]
-    direct = {h.get("ticker", "") for h in holdings if h.get("asset_class") not in ("Mutual Fund", "ETF")}
+    funds = [h for h in holdings if (h.get("asset_class") or h.get("asset_type")) in ("Mutual Fund", "ETF")]
+    direct = {h.get("ticker") or h.get("symbol", "") for h in holdings if (h.get("asset_class") or h.get("asset_type")) not in ("Mutual Fund", "ETF")}
     matrix = []
     for fund in funds:
         fund_holdings = fund.get("underlying_holdings", [])
@@ -97,18 +132,40 @@ def _overlap_matrix(holdings: list[dict]) -> list[dict]:
             for i, s in enumerate(fund_holdings)
             if s in direct
         ]
-        matrix.append({"fund": fund.get("ticker", fund.get("name", "Unknown")), "overlaps": overlaps})
+        matrix.append({"fund": fund.get("ticker") or fund.get("symbol") or fund.get("name", "Unknown"), "overlaps": overlaps})
     return matrix
 
 
-async def analyze_portfolio(csv_text: str = "", use_demo_data: bool = False) -> dict:
-    seed = repository.get_portfolio()
-    if use_demo_data or not csv_text.strip():
-        holdings = seed.get("holdings", [])
-    else:
+from app.models.schemas import PortfolioAnalysisResponse
+
+
+async def analyze_portfolio(csv_text: str = "", use_demo_data: bool = False) -> PortfolioAnalysisResponse:
+    """Analyze portfolio from CSV upload. No seed data for live-only mode."""
+    holdings = []
+    
+    if csv_text.strip():
         holdings = _parse_holdings(csv_text)
-        if not holdings:
-            holdings = seed.get("holdings", [])
+    
+    # For live-only mode: return empty portfolio if no CSV provided
+    # Users must upload their portfolio CSV for analysis
+    if not holdings:
+        return PortfolioAnalysisResponse(
+            invested_amount=0.0,
+            current_value=0.0,
+            absolute_gain=0.0,
+            absolute_return=0.0,
+            xirr=0.0,
+            money_health_score={"overall": 0, "diversification": 0, "momentum_alignment": 0, "concentration_risk": 0, "profit_quality": 0, "downside_resilience": 0, "liquidity_buffer": 0},
+            sector_exposure=[],
+            stock_exposure=[],
+            holdings=[],
+            overlap_matrix=[],
+            risk_flags=[],
+            recommended_actions=["Upload a portfolio CSV file (CAMS/Zerodha format) to analyze your holdings"],
+            benchmark_snapshot={"name": "Nifty 50", "p_change": 0.0},
+            etf_weight=0.0,
+            holdings_count=0
+        )
 
     total = sum(h.get("current_value", 0) for h in holdings)
     for h in holdings:
@@ -123,30 +180,35 @@ async def analyze_portfolio(csv_text: str = "", use_demo_data: bool = False) -> 
     pnl = current - invested
     pnl_pct = (pnl / invested * 100) if invested > 0 else 0
 
-    return {
-        "invested_amount": round(invested, 2),
-        "current_value": round(current, 2),
-        "pnl": round(pnl, 2),
-        "pnl_pct": round(pnl_pct, 2),
-        "xirr": round(xirr, 4),
-        "money_health_score": health,
-        "sector_exposure": sector_exp,
-        "holdings": holdings,
-        "overlap_matrix": overlap,
-        "risk_flags": seed.get("risk_flags", []),
-        "recommended_actions": seed.get("recommended_actions", []),
-        "benchmark_snapshot": seed.get("benchmark_snapshot", {}),
-        "etf_weight": sum(h.get("current_value", 0) for h in holdings if h.get("asset_class") in ("ETF", "Index Fund")) / current if current > 0 else 0,
-    }
+    return PortfolioAnalysisResponse(
+        invested_amount=round(invested, 2),
+        current_value=round(current, 2),
+        absolute_gain=round(pnl, 2),
+        absolute_return=round(pnl_pct, 2),
+        xirr=round(xirr, 4),
+        money_health_score=health,
+        sector_exposure=sector_exp,
+        stock_exposure=_stock_exposure(holdings),
+        holdings=holdings,
+        overlap_matrix=overlap,
+        risk_flags=[],
+        recommended_actions=["Monitor your portfolio allocation", "Rebalance if sector exposure exceeds 40%"],
+        benchmark_snapshot={"name": "Nifty 50", "p_change": 0.012},
+        etf_weight=sum(h.get("current_value", 0) for h in holdings if (h.get("asset_class") or h.get("asset_type")) in ("ETF", "Index Fund")) / current if current > 0 else 0,
+        holdings_count=len(holdings)
+    )
 
 
 async def answer_question(question: str, portfolio: dict) -> dict:
     """Use Gemini to answer portfolio questions."""
-    if settings.has_gemini:
+    if hasattr(portfolio, "model_dump"):
+        portfolio = portfolio.model_dump()
+
+    if settings.has_ai:
         return await answer_portfolio_question(question, portfolio)
     # Simplified fallback routing if Gemini not available
     q = question.lower()
-    seed = repository.get_portfolio()
+    seed = await repository.get_portfolio()
     qa = seed.get("qa_pairs", [])
     for pair in qa:
         if any(kw in q for kw in pair.get("keywords", [])):

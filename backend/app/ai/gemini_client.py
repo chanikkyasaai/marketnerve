@@ -1,47 +1,138 @@
 """
-Google Gemini 1.5 Flash — structured JSON output client.
-Used for signal reasoning, portfolio Q&A, and pattern narratives.
+LLM client — Mistral primary, Gemini/Groq fallback.
+Exposes the same gemini_json() interface so all callers work unchanged.
 """
 import asyncio
 import json
 import logging
+import urllib.request
+import ssl
 from typing import Any
 
-import google.generativeai as genai
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-_model = None
+_ssl_ctx = ssl.create_default_context()
 
-def _get_model():
-    global _model
-    if _model is None and settings.has_gemini:
-        genai.configure(api_key=settings.gemini_api_key)
-        _model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            generation_config={
-                "response_mime_type": "application/json",
-                "temperature": 0.4,
-                "max_output_tokens": 1024,
+
+async def _call_mistral(prompt: str) -> Any:
+    """Call Mistral AI with JSON mode."""
+    payload = json.dumps({
+        "model": "mistral-small-latest",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 1500,
+        "temperature": 0.4,
+        "response_format": {"type": "json_object"},
+    }).encode()
+
+    def _sync_call():
+        req = urllib.request.Request(
+            "https://api.mistral.ai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {settings.mistral_api_key}",
             },
+            method="POST",
         )
-    return _model
+        with urllib.request.urlopen(req, timeout=30, context=_ssl_ctx) as r:
+            return json.loads(r.read())
+
+    data = await asyncio.to_thread(_sync_call)
+    content = data["choices"][0]["message"]["content"]
+    return json.loads(content)
+
+
+async def _call_gemini(prompt: str) -> Any:
+    """Fallback: call Gemini 2.0 Flash."""
+    import google.generativeai as genai
+    genai.configure(api_key=settings.gemini_api_key)
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        generation_config={
+            "response_mime_type": "application/json",
+            "temperature": 0.4,
+            "max_output_tokens": 1500,
+        },
+    )
+    response = await asyncio.to_thread(model.generate_content, prompt)
+    return json.loads(response.text)
+
+
+async def _call_groq(prompt: str) -> Any:
+    """Fallback: call Groq (llama-3.1-70b)."""
+    payload = json.dumps({
+        "model": "llama-3.1-70b-versatile",
+        "messages": [
+            {"role": "system", "content": "You are a market analyst. Always respond with valid JSON only."},
+            {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 1500,
+        "temperature": 0.4,
+    }).encode()
+
+    def _sync_call():
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {settings.groq_api_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20, context=_ssl_ctx) as r:
+            return json.loads(r.read())
+
+    data = await asyncio.to_thread(_sync_call)
+    content = data["choices"][0]["message"]["content"]
+    # Strip markdown code fences if present
+    content = content.strip()
+    if content.startswith("```"):
+        content = content.split("```")[1]
+        if content.startswith("json"):
+            content = content[4:]
+    return json.loads(content.strip())
 
 
 async def gemini_json(prompt: str, fallback: Any = None) -> Any:
-    """Call Gemini 1.5 Flash and return parsed JSON. Falls back gracefully."""
-    model = _get_model()
-    if model is None:
-        logger.warning("Gemini not configured — returning fallback")
-        return fallback
-    try:
-        response = await asyncio.to_thread(model.generate_content, prompt)
-        return json.loads(response.text)
-    except Exception as e:
-        logger.error(f"Gemini call failed: {e}")
-        return fallback
+    """
+    Call LLM and return parsed JSON. Tries Mistral → Gemini → Groq.
+    Falls back gracefully to `fallback` value on all failures.
+    """
+    # 1. Mistral (primary — confirmed working)
+    if settings.has_mistral:
+        try:
+            result = await _call_mistral(prompt)
+            logger.debug("LLM: Mistral OK")
+            return result
+        except Exception as e:
+            logger.warning(f"Mistral call failed: {e}")
 
+    # 2. Gemini (secondary)
+    if settings.has_gemini:
+        try:
+            result = await _call_gemini(prompt)
+            logger.debug("LLM: Gemini OK")
+            return result
+        except Exception as e:
+            logger.warning(f"Gemini call failed: {e}")
+
+    # 3. Groq (tertiary)
+    if settings.has_groq:
+        try:
+            result = await _call_groq(prompt)
+            logger.debug("LLM: Groq OK")
+            return result
+        except Exception as e:
+            logger.warning(f"Groq call failed: {e}")
+
+    logger.error("All LLM providers failed — returning fallback")
+    return fallback
+
+
+# ── Prompts and helper functions (unchanged interface) ──────────────────────
 
 SIGNAL_PROMPT = """You are MarketNerve Signal Scout — an AI analyst covering Indian equities for retail investors.
 
@@ -186,7 +277,7 @@ async def answer_portfolio_question(question: str, portfolio: dict) -> dict:
     )
     fallback = {
         "answer": "Unable to process question at this time. Please try again.",
-        "logic": ["Gemini AI unavailable"],
+        "logic": ["AI temporarily unavailable"],
         "supporting_metrics": {},
         "disclaimer": "Not financial advice.",
     }

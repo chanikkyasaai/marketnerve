@@ -1,14 +1,18 @@
 import { MarketNerveShell } from "../../../components/marketnerve-shell";
-import { getAuditData } from "../../../lib/marketnerve-api.mjs";
+import { getAuditData, getHealthData } from "../../../lib/marketnerve-api.mjs";
 
 export default async function AuditPage({ params }) {
   const { id } = await params;
-  const audit = await getAuditData(id);
+  const [audit, health] = await Promise.all([
+    getAuditData(id),
+    getHealthData(),
+  ]);
   const enrich = audit.enrichment_snapshot ?? {};
   const confMeta = audit.confidence_metadata ?? {};
 
   return (
     <MarketNerveShell
+      marketStatus={health.market_status}
       eyebrow="Signal Audit Trail — Full Transparency"
       title={`AUDIT <span class="accent">${audit.ticker}</span>`}
       subtitle={`Signal ID: ${audit.signal_id ?? id}`}

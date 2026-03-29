@@ -19,18 +19,22 @@ class QueryRequest(BaseModel):
 
 @router.post("/portfolio/analyze")
 async def analyze(req: PortfolioRequest):
-    return await analyze_portfolio(
+    result = await analyze_portfolio(
         csv_text=req.csv_text or "",
         use_demo_data=req.use_demo_data,
     )
+    return result.model_dump() if hasattr(result, "model_dump") else result
 
 
 @router.post("/portfolio/query")
 async def query(req: QueryRequest):
-    # Get portfolio data first, then ask Gemini
-    portfolio = await analyze_portfolio(
-        csv_text=req.csv_text or "",
-        use_demo_data=req.use_demo_data,
-    )
-    result = await answer_question(req.question, portfolio)
-    return result
+    try:
+        # Get portfolio data first, then ask Gemini
+        portfolio = await analyze_portfolio(
+            csv_text=req.csv_text or "",
+            use_demo_data=req.use_demo_data,
+        )
+        ans = await answer_question(req.question, portfolio)
+        return ans.model_dump() if hasattr(ans, "model_dump") else ans
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

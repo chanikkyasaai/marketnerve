@@ -1,0 +1,176 @@
+@startuml
+!theme plain
+title MarketNerve - System Architecture
+
+skinparam backgroundColor #0b0f1a
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam ArrowColor #8aa0ff
+skinparam RectangleBorderColor #8aa0ff
+skinparam RectangleFontColor #eaf0ff
+skinparam RectangleBackgroundColor #131a2b
+skinparam DatabaseBorderColor #6dd3ff
+skinparam DatabaseFontColor #eaf0ff
+skinparam DatabaseBackgroundColor #10202b
+skinparam QueueBorderColor #f6c177
+skinparam QueueBackgroundColor #2b1f12
+skinparam QueueFontColor #fff2dd
+skinparam cloudBorderColor #ffbf69
+skinparam cloudFontColor #fff2dd
+skinparam cloudBackgroundColor #2a1f14
+
+package "Experience Layer" {
+	rectangle "Web App\nNext.js App Router" as WEB
+	rectangle "Signal Radar UI" as UI_SIG
+	rectangle "Pattern Hub UI" as UI_PAT
+	rectangle "Portfolio Lens UI" as UI_PORT
+	rectangle "Market Chat UI" as UI_CHAT
+	rectangle "Story and Video UI" as UI_STORY
+	rectangle "Audit Trail UI" as UI_AUDIT
+}
+
+package "API and Orchestration Layer" {
+	rectangle "FastAPI Gateway\nRouting, Validation, CORS" as API
+	rectangle "Health and Capability Service" as SVC_HEALTH
+	rectangle "Signals Service" as SVC_SIG
+	rectangle "Patterns Service" as SVC_PAT
+	rectangle "Portfolio Service" as SVC_PORT
+	rectangle "Chat Service" as SVC_CHAT
+	rectangle "Story Service" as SVC_STORY
+	rectangle "IPO Service" as SVC_IPO
+}
+
+package "Intelligence and Pipeline Layer" {
+	rectangle "Ingestion Workers\nNSE, BSE, yfinance" as ING
+	rectangle "Feature Engineering\nRSI, SMA, Volume Ratios" as FE
+	rectangle "Scoring Engine\nAnomaly and Opportunity Ranking" as SCORE
+	rectangle "Calibration Engine\nConfidence vs Realized Buckets" as CAL
+	rectangle "Backtest and Projection\nT+1, T+5, T+30" as BT
+	rectangle "Narrative Compiler\nStory Arc and Video Script" as NARR
+	rectangle "Citation Builder\nSources, Highlights, Audit Links" as CITE
+}
+
+package "Model Layer" {
+	rectangle "Prompt Router" as PROMPT
+	rectangle "Mistral Primary" as MISTRAL
+	rectangle "Gemini Fallback" as GEMINI
+	rectangle "Structured JSON Validator" as JSONVAL
+}
+
+package "Data Layer" {
+	database "PostgreSQL\nSignals, Patterns, Pipeline Runs" as PG
+	database "Redis\nHot Cache, Session State" as REDIS
+	database "Seed and Config JSON\nBootstrap and Offline Fallback" as SEED
+}
+
+package "External Data Providers" {
+	cloud "NSE Feeds\nAnnouncements, Block and Bulk Deals" as NSE
+	cloud "BSE Feeds\nCorporate Actions, SAST" as BSE
+	cloud "yfinance\nOHLCV and Index Data" as YF
+	cloud "FII and DII Streams" as FLOW
+}
+
+package "Ops and Observability" {
+	queue "Job Scheduler\nPeriodic Pipeline Runs" as SCHED
+	queue "Video Render Queue\nQueued -> Rendering -> Ready" as VQUEUE
+	rectangle "Telemetry\nLatency, Health, Capability Flags" as METRICS
+	rectangle "Error Logger\nFeed Failures and Retries" as LOGS
+}
+
+WEB --> API : REST and JSON
+WEB --> UI_SIG
+WEB --> UI_PAT
+WEB --> UI_PORT
+WEB --> UI_CHAT
+WEB --> UI_STORY
+WEB --> UI_AUDIT
+
+API --> SVC_HEALTH
+API --> SVC_SIG
+API --> SVC_PAT
+API --> SVC_PORT
+API --> SVC_CHAT
+API --> SVC_STORY
+API --> SVC_IPO
+
+SVC_SIG --> SCORE
+SVC_SIG --> BT
+SVC_SIG --> CAL
+SVC_SIG --> CITE
+
+SVC_PAT --> FE
+SVC_PAT --> BT
+SVC_PAT --> CITE
+
+SVC_PORT --> FE
+SVC_PORT --> PROMPT
+
+SVC_CHAT --> PROMPT
+SVC_CHAT --> CITE
+
+SVC_STORY --> NARR
+SVC_STORY --> VQUEUE
+
+ING --> NSE
+ING --> BSE
+ING --> YF
+ING --> FLOW
+ING --> FE
+FE --> SCORE
+SCORE --> BT
+BT --> CAL
+
+PROMPT --> MISTRAL
+PROMPT --> GEMINI
+MISTRAL --> JSONVAL
+GEMINI --> JSONVAL
+JSONVAL --> SVC_CHAT
+JSONVAL --> SVC_STORY
+
+SVC_HEALTH --> METRICS
+SVC_SIG --> PG
+SVC_PAT --> PG
+SVC_PORT --> PG
+SVC_STORY --> PG
+SVC_IPO --> PG
+
+SVC_SIG --> REDIS
+SVC_PAT --> REDIS
+SVC_CHAT --> REDIS
+SVC_STORY --> REDIS
+SVC_HEALTH --> REDIS
+
+SVC_SIG --> SEED
+SVC_PAT --> SEED
+SVC_STORY --> SEED
+
+SCHED --> ING
+VQUEUE --> NARR
+API --> LOGS
+ING --> LOGS
+SVC_SIG --> LOGS
+SVC_PAT --> LOGS
+
+note right of SCORE
+Core Math
+- z = (x - mu) / sigma
+- opportunity score blending
+	confidence, |z|, win-rate,
+	capped return edge
+end note
+
+note right of CAL
+Calibration
+- bucket confidence bands
+- compare predicted vs realized
+- MAE drift monitoring
+end note
+
+note bottom of VQUEUE
+Video lifecycle
+queued -> rendering -> ready
+end note
+
+@enduml

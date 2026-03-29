@@ -167,25 +167,26 @@ class MoneyHealthScore(BaseModel):
 
 
 class PortfolioAnalysisResponse(BaseModel):
-    portfolio_name: str
-    currency: str
-    zero_retention_mode: bool
-    holdings_count: int
+    portfolio_name: str = "MarketNerve Portfolio"
+    currency: str = "INR"
+    zero_retention_mode: bool = True
+    holdings_count: int = 0
     invested_amount: float
     current_value: float
-    absolute_gain: float
-    absolute_return: float
+    absolute_gain: float = 0.0
+    absolute_return: float = 0.0
     xirr: float
-    direct_equity_weight: float
-    mutual_fund_weight: float
-    etf_weight: float
-    sector_exposure: list[ExposureItem]
-    stock_exposure: list[ExposureItem]
-    overlap_matrix: list[OverlapRow]
-    benchmark_snapshot: BenchmarkSnapshot
-    money_health_score: MoneyHealthScore
-    risk_flags: list[str]
-    recommended_actions: list[str]
+    direct_equity_weight: float = 0.0
+    mutual_fund_weight: float = 0.0
+    etf_weight: float = 0.0
+    sector_exposure: list[dict] = Field(default_factory=list)
+    stock_exposure: list[dict] = Field(default_factory=list)
+    overlap_matrix: list[dict] = Field(default_factory=list)
+    benchmark_snapshot: dict = Field(default_factory=dict)
+    money_health_score: dict = Field(default_factory=dict)
+    risk_flags: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+    holdings: list[dict] = Field(default_factory=list)
 
 
 class PortfolioAnswer(BaseModel):
@@ -207,6 +208,8 @@ class StoryVideo(BaseModel):
     formats: list[str]
     lead_signal_id: str | None = None
     script_outline: list[str] = Field(default_factory=list)
+    render_status: dict = Field(default_factory=dict)
+    scene_plan: list[dict] = Field(default_factory=list)
 
 
 class StoryEvent(BaseModel):
@@ -257,9 +260,12 @@ class SignalSubscriptionRequest(BaseModel):
 
 class SignalSubscriptionResponse(BaseModel):
     subscription_id: str
-    stream: str
-    filters: dict
-    active: bool
+    status: str
+    active: bool = True
+    watchlist: list[str]
+    sectors: list[str]
+    min_confidence: float
+    filters: dict | None = None
 
 
 class LiveEvent(BaseModel):
